@@ -94,6 +94,99 @@ sequenceDiagram
 
 ---
 
+## 🔬 Inside the pipeline — a worked example
+
+To make the data flow concrete, here is **one real piece of content** — the paragraph about Apple's
+*Wearables* — traced through every stage, showing exactly what each step produced and handed to the next.
+
+### Ingest
+
+**Stage 1 · Parse** — the raw PDF page becomes typed, labelled elements.
+
+```
+Input : a page of the Apple 10-K PDF (just ink, no structure)
+Output: { element_id: "el_00092", type: "NarrativeText", page: 4,
+          text: "Wearables includes smartwatches, wireless headphones and spatial computers…" }
+        … plus el_00091 (Title "Wearables, Home and Accessories"), el_00093, el_00094
+➜ passed on: a list of typed elements
+```
+
+**Stage 2 · Chunk** — small elements are grouped into one search-sized passage, with provenance.
+
+```
+Input : el_00092, el_00093, el_00094  (3 parsed elements)
+Output: { chunk_id: "chunk_00008",
+          text: "Wearables includes smartwatches… Home includes Apple TV… Accessories…",
+          token_count: 153,
+          source_element_ids: ["el_00092","el_00093","el_00094"],     # provenance
+          section_path: ["Item 1. Business","Company Background","Products",
+                         "Wearables, Home and Accessories"] }          # breadcrumb
+➜ passed on: a chunk (right-sized, with its section breadcrumb)
+```
+
+**Stage 3 · Embed** — the chunk's text (prefixed with its breadcrumb) becomes a meaning vector.
+
+```
+Input : "Item 1. Business > … > Wearables, Home and Accessories\n\nWearables includes smartwatches…"
+Output: [0.0187, 0.0057, -0.0058, 0.0198, … ]   # 1536 numbers, magnitude ≈ 1.0
+➜ passed on: the chunk + its embedding
+```
+
+**Stage 4 · Store** — the chunk lands as one row in the Chroma vector database.
+
+```
+Input : chunk_00008 + its 1536-d vector
+Output: a row →  id: "chunk_00008"
+                 document: "Wearables includes smartwatches…"
+                 metadata: { section_path, first_page: 4, last_page: 4,
+                             element_type: "prose", token_count: 153, source_element_ids }
+                 embedding: [0.0187, 0.0057, …]
+➜ stored on disk, indexed for fast nearest-neighbour search
+```
+
+### Answer
+
+**Stage 5 · Retrieve** — the question is embedded and matched against all stored vectors.
+
+```
+Input : "What wearables and smart home products does Apple make?"
+Process: embed the question → compare to all 263 vectors by cosine similarity
+Output: top-20 candidates, e.g.  #1 chunk_00008  (similarity 0.70)  ← the Wearables chunk wins
+➜ passed on: 20 candidate chunks
+```
+
+**Stage 6 · Rerank** — an LLM re-reads the question + each candidate together and re-scores.
+
+```
+Input : the question + 20 candidates
+Process: score each (question, chunk) pair 0–10 for "does this answer it?"  (run in parallel)
+Output: re-sorted, trimmed to top 5  →  chunk_00008 stays #1
+➜ passed on: the 5 best chunks
+```
+
+**Stage 7 · Generate** — the top chunks become the context for a grounded, cited answer.
+
+```
+Input : the question + top-5 chunks as numbered CONTEXT
+Process: LLM answers using ONLY that context, cites passages, refuses if absent
+Output: "Apple's wearables include Apple Watch, AirPods and Beats, and Apple Vision Pro… [1]"
+        sources: [ { number: 1, chunk_id: "chunk_00008", section: "… > Wearables…", pages: "p4-4" } ]
+➜ returned to the user
+```
+
+### The journey in one line
+
+```
+PDF page → el_00091/92/93/94 → chunk_00008 → [0.0187, 0.0057, …] → Chroma row
+         → retrieved (0.70) → reranked (#1) → cited answer
+```
+
+One paragraph about Apple Watch travels from raw ink to a typed element, to a right-sized chunk, to a
+fingerprint, to a stored row — then, at question time, back out as the top hit and into a cited answer.
+The same path runs for all **263** chunks.
+
+---
+
 ## 🧰 Tech stack
 
 | Layer | Technology |
@@ -257,18 +350,62 @@ All in `config/default.yaml`:
 - Answers can still contain errors — the UI shows a disclaimer and always cites sources so claims are verifiable.
 - The reranker and judge are LLMs, so scores carry mild, expected variance.
 
-### Troubleshooting
+---
 
-- **Port already in use** — run on another port: `uvicorn api.main:app --port 8600`.
-- **`tiktoken` can't download its encoding (offline/restricted network)** — pre-seed its cache and set
-  `export TIKTOKEN_CACHE_DIR=/path/to/cache`. Only needed for the ingest stages, not for serving.
+## 🗂️ Scaling to multiple filings (multi-company)
+
+Today the index holds one document. Supporting many companies — so an investor could pick *Microsoft*,
+*Nvidia* or *SpaceX* and ask about that filing — needs **surprisingly little change**, because the
+pipeline is already company-agnostic. The key idea is a single new metadata field: **`company`**.
+
+**1. Tag every chunk with its company.** All filings live in the same vector store, each chunk
+labelled with whose document it came from:
+
+```
+chunk_00064 | company: "AAPL" | section: Capital Return Program | text: "…"
+chunk_00210 | company: "MSFT" | section: Share Repurchases      | text: "…"
+chunk_00088 | company: "NVDA" | section: Data Center Revenue     | text: "…"
+```
+
+**2. Filter the search by company.** When the user selects a company, retrieval adds a filter so the
+question only matches that company's chunks — never another's by accident:
+
+```python
+store.search(question_vector, where={"company": "MSFT"})
+#                              └──────────────────────────┘
+#         "only compare against Microsoft's vectors, ignore the rest"
+```
+
+Chroma supports this metadata filter natively — it's a one-line addition.
+
+**What actually changes in the code:**
+
+| Stage | Change |
+|-------|--------|
+| Parse / Chunk / Embed | **None** — they process whatever PDF they're given |
+| Store (`_to_metadata`) | Add `"company": company_id` to each chunk's metadata — *~1 line* |
+| Retrieve | Accept a `company` argument, pass it as Chroma's `where` filter — *a few lines* |
+| Rerank / Generate / Evaluate | **None** — they work on whatever chunks retrieval returns |
+
+**Onboarding a new filing** then becomes: drop the PDF in `data/raw/`, run the ingest with
+`company="SPACEX"`, done — investors can immediately query it. The answer path doesn't change at all.
+
+**Two ways to organise it:**
+
+| Approach | How | Best when |
+|----------|-----|-----------|
+| **One store + `company` filter** *(recommended)* | All companies in one collection, filtered by metadata | Dozens of companies, simple to manage |
+| **One store per company** | `chunks_aapl`, `chunks_msft`, … | Hundreds of companies, or strict isolation |
+
+In short: **tag chunks with a company, filter searches by it** — the ingest runs once per new document
+and the rest of the system is untouched.
 
 ---
 
 ## 🗺️ Roadmap
 
 - Stream the answer token-by-token (feels faster)
-- Multi-document support (pick a company, filter by metadata)
+- Multi-company support (the approach above)
 - Deploy behind a public URL
 
 ---
