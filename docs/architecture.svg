@@ -1,0 +1,67 @@
+<svg width="1200" height="470" viewBox="0 0 1200 470" fill="none" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#0a6f49"/>
+    </marker>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#14201b" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="470" rx="18" fill="#f4f6f5"/>
+
+  <!-- ===== INGEST lane (offline) ===== -->
+  <rect x="40" y="40" width="1120" height="150" rx="14" fill="#eef4f0" stroke="#d6e4dc"/>
+  <text x="64" y="70" fill="#0a6f49" font-size="14" font-weight="700" letter-spacing="0.06em">INGEST · offline, once per document</text>
+
+  <g filter="url(#sh)" font-size="15.5" font-weight="650">
+    <g transform="translate(64,92)"><rect width="172" height="72" rx="11" fill="#ffffff" stroke="#cfe3d8"/>
+      <text x="86" y="33" fill="#14201b" text-anchor="middle">1 · Parse</text>
+      <text x="86" y="54" fill="#5e6e67" text-anchor="middle" font-size="12" font-weight="500">PDF → elements</text></g>
+    <g transform="translate(312,92)"><rect width="172" height="72" rx="11" fill="#ffffff" stroke="#cfe3d8"/>
+      <text x="86" y="33" fill="#14201b" text-anchor="middle">2 · Chunk</text>
+      <text x="86" y="54" fill="#5e6e67" text-anchor="middle" font-size="12" font-weight="500">~400-token passages</text></g>
+    <g transform="translate(560,92)"><rect width="172" height="72" rx="11" fill="#ffffff" stroke="#cfe3d8"/>
+      <text x="86" y="33" fill="#14201b" text-anchor="middle">3 · Embed</text>
+      <text x="86" y="54" fill="#5e6e67" text-anchor="middle" font-size="12" font-weight="500">text → 1536-d vector</text></g>
+    <g transform="translate(808,92)"><rect width="172" height="72" rx="11" fill="#ffffff" stroke="#cfe3d8"/>
+      <text x="86" y="33" fill="#14201b" text-anchor="middle">4 · Store</text>
+      <text x="86" y="54" fill="#5e6e67" text-anchor="middle" font-size="12" font-weight="500">Chroma vector DB</text></g>
+  </g>
+  <g stroke="#0a6f49" stroke-width="2.2" marker-end="url(#arrow)">
+    <path d="M236 128 H308"/><path d="M484 128 H556"/><path d="M732 128 H804"/>
+  </g>
+
+  <!-- ===== ANSWER lane (live) ===== -->
+  <rect x="40" y="225" width="1120" height="150" rx="14" fill="#e9f3ee" stroke="#cbe4d7"/>
+  <text x="64" y="255" fill="#0a6f49" font-size="14" font-weight="700" letter-spacing="0.06em">ANSWER · live, per question</text>
+
+  <g filter="url(#sh)" font-size="15.5" font-weight="650">
+    <g transform="translate(64,277)"><rect width="210" height="72" rx="11" fill="#ffffff" stroke="#c2e0d2"/>
+      <text x="105" y="33" fill="#14201b" text-anchor="middle">5 · Retrieve</text>
+      <text x="105" y="54" fill="#5e6e67" text-anchor="middle" font-size="12" font-weight="500">nearest 20 by cosine</text></g>
+    <g transform="translate(360,277)"><rect width="210" height="72" rx="11" fill="#ffffff" stroke="#c2e0d2"/>
+      <text x="105" y="33" fill="#14201b" text-anchor="middle">6 · Rerank</text>
+      <text x="105" y="54" fill="#5e6e67" text-anchor="middle" font-size="12" font-weight="500">LLM re-scores → top 5</text></g>
+    <g transform="translate(656,277)"><rect width="210" height="72" rx="11" fill="#ffffff" stroke="#c2e0d2"/>
+      <text x="105" y="33" fill="#14201b" text-anchor="middle">7 · Generate</text>
+      <text x="105" y="54" fill="#5e6e67" text-anchor="middle" font-size="12" font-weight="500">grounded, cited answer</text></g>
+    <g transform="translate(952,277)"><rect width="208" height="72" rx="11" fill="#0c8a5b" stroke="#0a6f49"/>
+      <text x="104" y="33" fill="#ffffff" text-anchor="middle">Answer</text>
+      <text x="104" y="54" fill="#d8ffec" text-anchor="middle" font-size="12" font-weight="500">+ source citations</text></g>
+  </g>
+  <g stroke="#0a6f49" stroke-width="2.2" marker-end="url(#arrow)">
+    <path d="M274 313 H356"/><path d="M570 313 H652"/><path d="M866 313 H948"/>
+  </g>
+
+  <!-- connector store -> retrieve -->
+  <path d="M894 164 C 894 200, 169 190, 169 273" stroke="#0a6f49" stroke-width="2.2" stroke-dasharray="6 5" fill="none" marker-end="url(#arrow)"/>
+  <text x="560" y="210" fill="#5e6e67" font-size="12.5" font-style="italic">question embedded &amp; matched against the stored vectors</text>
+
+  <!-- Evaluate footer -->
+  <g transform="translate(40,405)">
+    <rect width="1120" height="44" rx="12" fill="#ffffff" stroke="#d6e4dc"/>
+    <text x="24" y="28" fill="#0a6f49" font-size="14" font-weight="700">8 · Evaluate</text>
+    <text x="150" y="28" fill="#5e6e67" font-size="13">graded test set → hit-rate 100% · MRR 1.00 · correctness 98% · faithfulness 100%</text>
+  </g>
+</svg>

@@ -1,0 +1,159 @@
+# Default configuration for the RAG system.
+# Override individual values via environment variables using the
+# nested delimiter pattern, e.g. PARSING__DEFAULT_STRATEGY=hi_res
+
+parsing:
+  # Which strategy unstructured uses by default.
+  # Options: "auto" | "fast" | "hi_res" | "ocr_only"
+  # - auto: routes per-page based on complexity (recommended default)
+  # - fast: text-extraction only, no layout detection (single column, simple PDFs)
+  # - hi_res: layout detection model, best for multi-column and tables
+  # - ocr_only: forces OCR, used for scanned PDFs
+  default_strategy: "auto"
+
+  # Languages tesseract will use when OCR fires.
+  # Add more codes if your corpus has multilingual content.
+  ocr_languages: ["eng"]
+
+  # Whether unstructured should attempt to detect table structure.
+  # If true, tables come back with rows/columns identified.
+  pdf_infer_table_structure: true
+
+  # Element types to extract as separate items (used in hi_res mode).
+  extract_image_block_types: ["Image", "Table"]
+
+logging:
+  # Console + file logging level.
+  # Options: "TRACE" | "DEBUG" | "INFO" | "WARNING" | "ERROR" | "CRITICAL"
+  level: "INFO"
+
+  # Whether to also write logs to disk under logs/.
+  to_file: true
+
+  # When to roll over to a new log file. Loguru syntax.
+  # "00:00" = midnight. Other examples: "1 day", "100 MB".
+  file_rotation: "00:00"
+
+  # How long to keep old log files before deleting.
+  file_retention: "14 days"
+
+chunking:
+  # Target chunk size in tokens. Chunks aim for this size, accumulating
+  # content until they reach it.
+  target_size_tokens: 400
+
+  # Maximum chunk size in tokens. Hard cap. If a single element is larger
+  # than this, it gets split at sentence boundaries.
+  max_size_tokens: 700
+
+  # Minimum chunk size in tokens. Chunks smaller than this are merged
+  # with their neighbor.
+  min_size_tokens: 100
+
+  # Overlap applied only when a single oversized block (> max_size_tokens) is
+  # split at sentence boundaries: roughly the last N tokens of one sub-chunk are
+  # carried into the start of the next so context isn't severed mid-block.
+  # Snaps to whole sentences, so the carried size is approximate. Set 0 to disable.
+  # (Normal chunks split on headings/element edges and get no overlap.)
+  overlap_tokens: 50
+
+  # Tokenizer to use for counting tokens. cl100k_base matches GPT-4 and
+  # text-embedding-3-* models.
+  tokenizer_encoding: "cl100k_base"
+
+  # Element types to drop entirely (noise).
+  drop_element_types: ["Footer", "Header", "PageNumber", "PageBreak"]
+
+  # Minimum text length (characters) for an element to be kept.
+  # Elements shorter than this are dropped regardless of type.
+  min_element_chars: 5
+
+  # Element types that should each become their own chunk (not merged).
+  isolated_element_types: ["Table", "Image"]
+
+embedding:
+  # OpenAI embedding model. text-embedding-3-small is cheap and high quality.
+  # Alternatives: "text-embedding-3-large" (stronger, pricier, 3072-dim native).
+  model: "text-embedding-3-small"
+
+  # Output vector size. The 3-* models support shortening below their native
+  # dimension (small=1536, large=3072). Must match across embed + retrieval.
+  dimensions: 1536
+
+  # How many chunks to send per API request. Larger = fewer round trips.
+  batch_size: 100
+
+  # Prepend the chunk's "Section > Subsection" breadcrumb to the embedded text
+  # so the vector captures context, not just the raw content. (Step 2 preserved
+  # section_path precisely for this.)
+  include_section_path: true
+
+  # OpenAI client retry budget for transient/rate-limit errors.
+  max_retries: 5
+
+storage:
+  # Vector database backend. Currently "chroma" (local, persistent, no server).
+  provider: "chroma"
+
+  # Chroma collection name holding this corpus's vectors.
+  collection_name: "rag_chunks"
+
+  # Nearest-neighbour distance metric. cosine matches the normalized vectors
+  # text-embedding-3-* returns. (Chroma stores this as hnsw:space.)
+  distance: "cosine"
+
+retrieval:
+  # Default number of chunks a query returns. Callers can override per-call.
+  top_k: 5
+
+  # Drop hits whose cosine similarity is below this threshold. 0.0 keeps every
+  # hit with non-negative similarity; raise it (e.g. 0.3) to filter weak matches.
+  min_score: 0.0
+
+rerank:
+  # Turn reranking on/off. When off, retrieval results are used as-is.
+  enabled: true
+
+  # Chat model that reads each (question, chunk) pair together and scores how
+  # well the chunk answers the question. gpt-4o-mini is cheap and capable.
+  model: "gpt-4o-mini"
+
+  # How many candidates to retrieve and feed into reranking. A wide net: the
+  # right chunk should be in here even if cosine search ranked it low.
+  candidate_k: 20
+
+  # How many chunks to keep after reranking re-sorts the candidates.
+  top_n: 5
+
+  # Score this many candidates concurrently (one model call each). Higher =
+  # faster reranking, up to the API's rate limits.
+  max_workers: 10
+
+  # OpenAI client retry budget for transient/rate-limit errors.
+  max_retries: 5
+
+generation:
+  # Chat model that writes the final answer from the retrieved context.
+  # gpt-4o is strong at grounded synthesis; gpt-4o-mini is cheaper.
+  model: "gpt-4o"
+
+  # Sampling temperature. 0.0 = deterministic, grounded answers. Raise for
+  # more varied phrasing (rarely wanted for document Q&A).
+  temperature: 0.0
+
+  # Maximum answer length in tokens.
+  max_tokens: 700
+
+  # OpenAI client retry budget for transient/rate-limit errors.
+  max_retries: 5
+
+evaluation:
+  # Chat model that acts as the judge, scoring answer correctness and
+  # faithfulness. Use a strong model here so the scores are trustworthy.
+  judge_model: "gpt-4o"
+
+  # Rank cutoff for retrieval metrics: hit-rate@k and the rank window for MRR.
+  k: 5
+
+  # OpenAI client retry budget for transient/rate-limit errors.
+  max_retries: 5

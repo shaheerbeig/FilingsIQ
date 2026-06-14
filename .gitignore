@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environments
+.env
+.venv/
+venv/
+
+# Data and runtime artifacts
+data/raw/*
+data/parsed/*
+data/chunks/*
+data/embeddings/*
+data/vector_store/*
+!data/raw/.gitkeep
+!data/parsed/.gitkeep
+!data/chunks/.gitkeep
+!data/embeddings/.gitkeep
+!data/vector_store/.gitkeep
+logs/*
+!logs/.gitkeep
+
+# Eval reports (generated); keep the hand-authored test set.
+eval/report.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Notebooks
+.ipynb_checkpoints/

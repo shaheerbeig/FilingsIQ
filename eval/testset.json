@@ -1,0 +1,35 @@
+{
+  "description": "Hand-authored ground truth for the Apple FY2024 10-K corpus. Each case pairs a question with the chunk(s) that actually answer it and a reference answer. relevant_chunk_ids drive retrieval metrics; reference_answer drives the LLM-judged correctness. answerable=false cases test that the system refuses instead of hallucinating.",
+  "cases": [
+    {
+      "question": "How does Apple return cash to shareholders?",
+      "reference_answer": "Apple returns cash to shareholders through a share repurchase (buyback) program and by paying quarterly cash dividends.",
+      "relevant_chunk_ids": ["chunk_00064"],
+      "answerable": true
+    },
+    {
+      "question": "What antitrust lawsuit did the U.S. Department of Justice file against Apple?",
+      "reference_answer": "On March 21, 2024 the U.S. Department of Justice and several state and district attorneys general filed a civil antitrust lawsuit against Apple in the U.S. District Court for the District of New Jersey, alleging monopolization or attempted monopolization in the smartphone markets.",
+      "relevant_chunk_ids": ["chunk_00045"],
+      "answerable": true
+    },
+    {
+      "question": "Who is Apple's independent registered public accounting firm?",
+      "reference_answer": "Apple's independent registered public accounting firm is Ernst & Young LLP.",
+      "relevant_chunk_ids": ["chunk_00251"],
+      "answerable": true
+    },
+    {
+      "question": "What wearables and smart home products does Apple make?",
+      "reference_answer": "Apple's Wearables, Home and Accessories category includes Apple Watch (smartwatches), AirPods and Beats (wireless headphones), Apple Vision Pro (spatial computer), Apple TV, and HomePod and HomePod mini smart speakers.",
+      "relevant_chunk_ids": ["chunk_00008"],
+      "answerable": true
+    },
+    {
+      "question": "What is Apple's policy on quantum teleportation of iPhones?",
+      "reference_answer": "The document does not contain any information about quantum teleportation of iPhones.",
+      "relevant_chunk_ids": [],
+      "answerable": false
+    }
+  ]
+}

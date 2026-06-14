@@ -1,0 +1,16 @@
+# Core RAG pipeline
+openai>=2.0
+chromadb>=1.5
+tiktoken>=0.12
+pydantic>=2.10
+pydantic-settings>=2.10
+loguru>=0.7
+pyyaml>=6.0
+
+# Ingest (parsing PDFs) — only needed to (re)build the index, not to serve
+unstructured>=0.22
+pymupdf>=1.27
+
+# API + frontend
+fastapi>=0.110
+uvicorn[standard]>=0.27

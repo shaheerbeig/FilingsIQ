@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>10-K Investor Q&amp;A</title>
+  <style>
+    :root {
+      --bg: #f4f6f5; --panel: #ffffff; --ink: #14201b; --muted: #5e6e67;
+      --line: #e3e8e5; --accent: #0c8a5b; --accent-2: #0a6f49; --accent-soft: #0c8a5b14;
+      --shadow: 0 1px 2px rgba(20,32,27,.04), 0 8px 24px rgba(20,32,27,.06);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--ink);
+      font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, sans-serif;
+      line-height: 1.62; -webkit-font-smoothing: antialiased;
+    }
+    .topbar {
+      background: linear-gradient(120deg, #0c8a5b, #0a6f49 70%, #0b5c3e);
+      color: #eafff5; padding: 30px 20px 34px;
+    }
+    .topbar .inner { max-width: 780px; margin: 0 auto; }
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 700; font-size: 20px; }
+    .brand .dot { width: 30px; height: 30px; border-radius: 8px; background: #ffffff22;
+      display: grid; place-items: center; font-size: 16px; }
+    .topbar p { margin: 10px 0 0; color: #c8f3e0; font-size: 14.5px; max-width: 560px; }
+    .pill { display:inline-block; margin-top:14px; font-size:12px; font-weight:600;
+      background:#ffffff1f; color:#eafff5; padding:5px 11px; border-radius:20px; }
+
+    .wrap { max-width: 780px; margin: -20px auto 80px; padding: 0 20px; }
+    .ask-card {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+      box-shadow: var(--shadow); padding: 16px; position: relative;
+    }
+    .ask-box { display: flex; gap: 10px; }
+    input[type=text] {
+      flex: 1; padding: 14px 16px; font-size: 15.5px; border-radius: 11px;
+      border: 1px solid var(--line); background: #fbfdfc; color: var(--ink); outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input[type=text]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    button {
+      padding: 0 24px; font-size: 15px; font-weight: 650; border: none; border-radius: 11px;
+      background: var(--accent); color: white; cursor: pointer; transition: background .15s;
+    }
+    button:hover { background: var(--accent-2); }
+    button:disabled { opacity: .55; cursor: default; }
+
+    .chips { margin: 14px 2px 2px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      font-size: 13px; padding: 8px 13px; border-radius: 22px; cursor: pointer;
+      background: #fff; border: 1px solid var(--line); color: var(--muted); transition: all .15s;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--accent-2); background: var(--accent-soft); }
+
+    #result { margin-top: 22px; }
+    .card {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+      box-shadow: var(--shadow); padding: 22px 24px; margin-bottom: 16px;
+      animation: rise .25s ease both;
+    }
+    @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .label {
+      font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em;
+      color: var(--accent-2); font-weight: 700; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .label::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+    .answer { font-size: 16px; white-space: pre-wrap; color: #1d2b24; }
+    .answer .cite {
+      display: inline-block; font-size: 12px; font-weight: 700; color: var(--accent-2);
+      background: var(--accent-soft); border-radius: 5px; padding: 0 6px; margin: 0 1px;
+    }
+    .source { padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; }
+    .source:last-child { border-bottom: none; }
+    .source .num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 23px; height: 23px; border-radius: 7px; background: var(--accent-soft);
+      color: var(--accent-2); font-size: 12px; font-weight: 700; margin-right: 11px;
+    }
+    .source .meta { color: var(--muted); font-size: 12.5px; margin: 4px 0 0 34px; }
+    .spinner {
+      width: 18px; height: 18px; border: 2.5px solid var(--line); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .err { color: #b3261e; }
+    footer { text-align: center; color: var(--muted); font-size: 12.5px; margin-top: 26px; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="inner">
+      <div class="brand"><span class="dot">📈</span> 10-K Investor Q&amp;A</div>
+      <p>Ask plain-English questions about Apple's annual report. Every answer is drawn from the filing itself and shows its sources — no guesswork.</p>
+      <span class="pill">📄 Apple Inc. · FY2024 Form 10-K</span>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="ask-card">
+      <div class="ask-box">
+        <input id="q" type="text" placeholder="e.g. What were Apple's total net sales in 2024?" autocomplete="off" />
+        <button id="askBtn">Ask</button>
+      </div>
+      <div class="chips" id="examples">
+        <span class="chip">What were Apple's Services net sales in 2024?</span>
+        <span class="chip">What is Apple's gross margin percentage?</span>
+        <span class="chip">How much long-term debt does Apple have?</span>
+        <span class="chip">What is Apple's effective tax rate?</span>
+        <span class="chip">How did net sales change in Greater China?</span>
+      </div>
+    </div>
+
+    <div id="result"></div>
+
+    <footer>Answers are generated from the source filing and may contain errors — verify against the original 10-K.</footer>
+  </div>
+
+  <script>
+    const q = document.getElementById("q");
+    const askBtn = document.getElementById("askBtn");
+    const result = document.getElementById("result");
+
+    document.getElementById("examples").addEventListener("click", (e) => {
+      if (e.target.classList.contains("chip")) { q.value = e.target.textContent; ask(); }
+    });
+    askBtn.addEventListener("click", ask);
+    q.addEventListener("keydown", (e) => { if (e.key === "Enter") ask(); });
+
+    // Deep link: /?q=your+question auto-runs it on load (shareable links).
+    const preset = new URLSearchParams(location.search).get("q");
+    if (preset) { q.value = preset; ask(); }
+
+    function renderAnswer(text) {
+      const esc = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      return esc.replace(/\[(\d+)\]/g, '<span class="cite">$1</span>');
+    }
+
+    async function ask() {
+      const question = q.value.trim();
+      if (!question) return;
+      askBtn.disabled = true;
+      result.innerHTML = '<div class="card"><span class="spinner"></span> &nbsp;Searching the filing…</div>';
+
+      try {
+        const res = await fetch("/api/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question }),
+        });
+        if (!res.ok) throw new Error("Request failed (" + res.status + ")");
+        const data = await res.json();
+
+        let html = '<div class="card"><div class="label">Answer</div>';
+        html += '<div class="answer">' + renderAnswer(data.answer) + "</div></div>";
+
+        if (data.sources && data.sources.length) {
+          html += '<div class="card"><div class="label">Sources</div>';
+          for (const s of data.sources) {
+            html += '<div class="source"><span class="num">' + s.number + "</span>" +
+                    s.section + '<div class="meta">' + s.chunk_id + " · " + s.pages + "</div></div>";
+          }
+          html += "</div>";
+        }
+        result.innerHTML = html;
+      } catch (err) {
+        result.innerHTML = '<div class="card err">Error: ' + err.message + "</div>";
+      } finally {
+        askBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
